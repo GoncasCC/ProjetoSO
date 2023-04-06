@@ -136,6 +136,41 @@ void read_main_client_buffer(struct rnd_access_buffer* buffer, int client_id, in
 }
 
 
+void read_client_interm_buffer(struct circular_buffer* buffer, int buffer_size, struct operation* op) {
+    int in = buffer->ptrs->in;
+    int out = buffer->ptrs->out;
+
+    // Verifica se há operações no buffer
+    if (in != out) {
+        *op = buffer->buffer[out]; // Lê operação do buffer
+
+        // Atualiza o valor de out_pos no buffer circular
+        out = (out + 1) % buffer_size;
+        buffer->ptrs->out = out;
+    } else {
+        op->id = -1; // Não há operações disponíveis
+    }
+}
+
+void read_interm_enterp_buffer(struct rnd_access_buffer* buffer, int enterp_id, int buffer_size, struct operation* op){
+    int pos = -1;
+    for (int i = 0; i < buffer_size; i++) {
+        if (buffer->ptrs[i] == client_id) {
+            pos = i;
+            break;
+        }
+    }
+    if (pos != -1) {
+        *op = buffer->buffer[pos];
+        buffer->ptrs[pos] = 0;
+    }
+    else {
+        op->id = -1;
+    }
+}
+
+
+
 
 
 
