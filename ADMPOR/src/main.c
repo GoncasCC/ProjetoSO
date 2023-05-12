@@ -7,6 +7,7 @@
 
 #include "main.h"
 #include "process.h"
+#include "synchronization.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -17,25 +18,41 @@ int i2;
 
 int main(int argc, char *argv[]) {
 //init data structures
-struct main_data* data = create_dynamic_memory(sizeof(struct main_data));
-struct comm_buffers* buffers = create_dynamic_memory(sizeof(struct comm_buffers));
-buffers->main_client = create_dynamic_memory(sizeof(struct rnd_access_buffer));
-buffers->client_interm = create_dynamic_memory(sizeof(struct circular_buffer));
-buffers->interm_enterp = create_dynamic_memory(sizeof(struct rnd_access_buffer));
+struct main_data* data = create_dynamic_memory(sizeof(struct
+main_data));
+struct comm_buffers* buffers = create_dynamic_memory(sizeof(struct
+comm_buffers));
+buffers->main_client = create_dynamic_memory(sizeof(struct
+rnd_access_buffer));
+buffers->client_interm = create_dynamic_memory(sizeof(struct
+circular_buffer));
+buffers-> interm_enterp = create_dynamic_memory(sizeof(struct
+rnd_access_buffer));
+// init semaphore data structure
+struct semaphores* sems = create_dynamic_memory(sizeof(struct
+semaphores));
+sems->main_client = create_dynamic_memory(sizeof(struct prodcons));
+sems->client_interm = create_dynamic_memory(sizeof(struct prodcons));
+sems->interm_enterp = create_dynamic_memory(sizeof(struct prodcons));
 //execute main code
 main_args(argc, argv, data);
 create_dynamic_memory_buffers(data);
 create_shared_memory_buffers(data, buffers);
-launch_processes(buffers, data);
-user_interaction(buffers, data);
+create_semaphores(data, sems);
+launch_processes(buffers, data, sems);
+user_interaction(buffers, data, sems);
 //release memory before terminating
 destroy_dynamic_memory(data);
 destroy_dynamic_memory(buffers->main_client);
 destroy_dynamic_memory(buffers->client_interm);
 destroy_dynamic_memory(buffers->interm_enterp);
 destroy_dynamic_memory(buffers);
-}
+destroy_dynamic_memory(sems->main_client);
+destroy_dynamic_memory(sems->client_interm);
+destroy_dynamic_memory(sems->interm_enterp);
+destroy_dynamic_memory(sems);
 
+}
 
 void main_args(int argc, char* argv[], struct main_data* data){
     if (argc == 6)
@@ -46,6 +63,7 @@ void main_args(int argc, char* argv[], struct main_data* data){
         data->n_clients = strtol(argv[3], &prt, 10);
         data->n_intermediaries = strtol(argv[4], &prt, 10);
         data->n_enterprises = strtol(argv[5], &prt, 10);
+        data->terminate = 0;
     }
 }
 
@@ -72,25 +90,25 @@ void create_shared_memory_buffers(struct main_data* data, struct comm_buffers* b
 }
 
 
-void launch_processes(struct comm_buffers* buffers, struct main_data* data){
+void launch_processes(struct comm_buffers* buffers, struct main_data* data, struct semaphores* sems){
     for (int i = 0; i < data->n_clients; i++)
     {
-        data->client_pids[i] = launch_client(i, buffers, data);
+        data->client_pids[i] = launch_client(i, buffers, data, sems);
     }
 
     for (int i = 0; i < data->n_intermediaries; i++)
     {
-        data->intermediary_pids[i] = launch_interm(i, buffers, data);
+        data->intermediary_pids[i] = launch_interm(i, buffers, data, sems);
     }
 
     for (int i = 0; i < data->n_enterprises; i++)
     {
-        data->enterprise_pids[i] = launch_enterp(i, buffers, data);
+        data->enterprise_pids[i] = launch_enterp(i, buffers, data, sems);
     }
 }
 
 
-void user_interaction(struct comm_buffers* buffers, struct main_data* data){
+void user_interaction(struct comm_buffers* buffers, struct main_data* data, struct semaphores* sems){
     char action[10];
     int op_counter = 0;
     printf("Ações disponíveis: \n ");
@@ -105,12 +123,12 @@ void user_interaction(struct comm_buffers* buffers, struct main_data* data){
         
 		if((strcmp(action , "op") == 0)){
             scanf("%d %d", &i1, &i2);
-			create_request(&op_counter, buffers, data);
+			create_request(&op_counter, buffers, data, sems);
 		}
         else if(strcmp(action , "status") == 0) {
             scanf("%d", &i1);
             i2 = op_counter;
-			read_status(data);
+			read_status(data, sems);
 		}
         else if(strcmp(action , "help") == 0) {
             printf("Ações disponíveis: \n ");
@@ -120,7 +138,7 @@ void user_interaction(struct comm_buffers* buffers, struct main_data* data){
             printf("    help - imprime informação sobre as ações disponíveis. \n ");
 		}
         else if(strcmp(action , "stop") == 0) {
-			stop_execution(data, buffers);
+			stop_execution(data, buffers, sems);
 		}else{
 			printf("Ação não reconhecida, insira 'help' para assistência.");
 		}
@@ -129,15 +147,15 @@ void user_interaction(struct comm_buffers* buffers, struct main_data* data){
 }
 
 
-void create_request(int* op_counter, struct comm_buffers* buffers, struct main_data* data){
+void create_request(int* op_counter, struct comm_buffers* buffers, struct main_data* data, struct semaphores* sems){
     if(*op_counter < sizeof(data->results)){
-
 		struct operation operation;
 		operation.id = *op_counter;
 		operation.requesting_client = i1;
         operation.requested_enterp = i2;
-
-		if(*data->terminate == 1){return;}
+        operation.status = 'M';
+        (&data->results)[operation.id] = &operation;
+		if(*(data->terminate) == 1){return;}
 
 		write_main_client_buffer(buffers->main_client, data->buffers_size, &operation);
 
@@ -150,7 +168,7 @@ void create_request(int* op_counter, struct comm_buffers* buffers, struct main_d
 }
 
 
-void read_status(struct main_data* data){
+void read_status(struct main_data* data, struct semaphores* sems){
     if(i1 < 0 || i1 >= i2){
 		printf("Erro: O id de operação fornecido nao é válido. \n");
 	}else{
@@ -186,10 +204,10 @@ void read_status(struct main_data* data){
 }
 
 
-void stop_execution(struct main_data* data, struct comm_buffers* buffers){
-    *data->terminate = 1;
+void stop_execution(struct main_data* data, struct comm_buffers* buffers, struct semaphores* sems){
     wait_processes(data);
     write_statistics(data);
+    *data->terminate = 1;
     destroy_memory_buffers(data, buffers);
 }
 
@@ -220,19 +238,19 @@ void wait_processes(struct main_data* data){
 void write_statistics(struct main_data* data){
     for (int i = 0; i < data->n_clients; i++)
     {
-        printf("Cliente %d encaminhou %d pedidos." , i , data->client_stats[i]);
+        printf("Cliente %d encaminhou %d pedidos. \n" , i , data->client_stats[i]);
     }
 
     //colocar todos os processos intermediarie em espera
     for (int i = 0; i < data->n_intermediaries; i++)
     {
-        printf("Intermediario %d respondeu a %d pedidos." , i , data->intermediary_stats[i]);
+        printf("Intermediario %d respondeu a %d pedidos. \n" , i , data->intermediary_stats[i]);
     }
 
     //colocar todos os processos enterprise em espera
     for (int i = 0; i < data->n_enterprises; i++)
     {
-        printf("Empresa %d recebeu %d pedidos." , i , data->enterprise_stats[i]);
+        printf("Empresa %d recebeu %d pedidos. \n" , i , data->enterprise_stats[i]);
     }
 
 }
@@ -253,6 +271,18 @@ void destroy_memory_buffers(struct main_data* data, struct comm_buffers* buffers
     destroy_shared_memory(STR_SHM_INTERM_ENTERP_PTR, buffers->interm_enterp->ptrs, data->buffers_size * sizeof(int));
     destroy_shared_memory(STR_SHM_MAIN_CLIENT_PTR, buffers->main_client->ptrs, data->buffers_size * sizeof(int));
     destroy_shared_memory(STR_SHM_RESULTS, data->results, MAX_RESULTS);
-    destroy_shared_memory(STR_SHM_TERMINATE, data->terminate, sizeof(int));
+    //destroy_shared_memory(STR_SHM_TERMINATE, data->terminate, sizeof(int)); <---- esta linha dá falta de segmentação
+
+}
+
+void create_semaphores(struct main_data* data, struct semaphores* sems){
+
+}
+
+void wakeup_processes(struct main_data* data, struct semaphores* sems){
+
+}
+
+void destroy_semaphores(struct semaphores* sems){
 
 }

@@ -1,6 +1,6 @@
 bin = bin
 OBJ_dir = obj
-OBJECTOS = client.o enterprise.o intermediary.o main.o memory.o process.o
+OBJECTOS = client.o enterprise.o intermediary.o main.o memory.o process.o synchronization.o
 CC = gcc
 
 out: $(OBJECTOS)
@@ -10,5 +10,5 @@ out: $(OBJECTOS)
 	$(CC) -I include -o $(OBJ_dir)/$@ -c $<
 
 clean:
-	$(OBJ_dir) rm –f *.o 
-	$(bin) rm –f AdmPor
+	rm -f $(OBJ_dir)/*.o
+	rm -rf $(bin)/AdmPor 

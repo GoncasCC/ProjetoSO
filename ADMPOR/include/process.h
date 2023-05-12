@@ -4,6 +4,7 @@
 #include "memory.h"
 #include "main.h"
 
+
 /* Função que inicia um novo processo cliente através da função fork do SO. O novo
 * processo irá executar a função execute_client respetiva, fazendo exit do retorno.
 * O processo pai devolve o pid do processo criado.

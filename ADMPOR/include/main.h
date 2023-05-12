@@ -2,6 +2,7 @@
 #define MAIN_H_GUARD
 
 #include "memory.h"
+#include "synchronization.h"
 
 //Estrutura que agrega a informação necessária pela main do AdmPor.
 struct main_data {

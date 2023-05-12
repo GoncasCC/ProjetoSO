@@ -6,31 +6,31 @@
  * */
 #include "enterprise.h"
 
-int execute_enterprise(int enterp_id, struct comm_buffers* buffers, struct main_data* data){
+int execute_enterprise(int enterp_id, struct comm_buffers* buffers, struct main_data* data, struct semaphores* sems){
     struct operation op;
     //não sei se é suposto ser um apontador ou não
     int counter = 0;
     while (1) {
-        enterprise_receive_operation(&op, enterp_id, buffers, data);
+        enterprise_receive_operation(&op, enterp_id, buffers, data, sems);
         if (*(data->terminate) == 1) {
                 return counter;
             }
         if (op.id != -1) {
-            enterprise_process_operation(&op, enterp_id, data, &counter);
+            enterprise_process_operation(&op, enterp_id, data, &counter, sems);
         }
     }
 }
 
 
 
-void enterprise_receive_operation(struct operation* op, int enterp_id, struct comm_buffers* buffers, struct main_data* data){
+void enterprise_receive_operation(struct operation* op, int enterp_id, struct comm_buffers* buffers, struct main_data* data, struct semaphores* sems){
     if (*(data->terminate) != 1) {
         read_interm_enterp_buffer(buffers->main_client, enterp_id, data->buffers_size, op);
     }
 }
 
 
-void enterprise_process_operation(struct operation* op, int enterp_id, struct main_data* data, int* counter){
+void enterprise_process_operation(struct operation* op, int enterp_id, struct main_data* data, int* counter, struct semaphores* sems){
     op->receiving_enterp = enterp_id;
     if (counter >= &data->max_ops) {
         op->status = 'A';
@@ -38,5 +38,5 @@ void enterprise_process_operation(struct operation* op, int enterp_id, struct ma
         op->status = 'E';
     }
     *counter += 1;
-    (&data->results)[op->id] = op;
+    (data->results)[op->id] = *op;
 }

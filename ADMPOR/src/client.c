@@ -6,35 +6,35 @@
  * */
 #include "client.h"
 
-int execute_client(int client_id, struct comm_buffers* buffers, struct main_data* data){
+int execute_client(int client_id, struct comm_buffers* buffers, struct main_data* data, struct semaphores* sems){
     struct operation op;
     //não sei se é suposto ser um apontador ou não
     int counter = 0;
     while (1) {
-        client_get_operation(&op, client_id, buffers, data);
+        client_get_operation(&op, client_id, buffers, data, sems);
         if (*(data->terminate) == 1) {
                 return counter;
             }
         if (op.id != -1) {
-            client_process_operation(&op, client_id, data, &counter);
-            client_send_operation(&op, buffers, data);
+            client_process_operation(&op, client_id, data, &counter, sems);
+            client_send_operation(&op, buffers, data, sems);
         }
     }
 }
 
-void client_get_operation(struct operation* op, int client_id, struct comm_buffers* buffers, struct main_data* data){
+void client_get_operation(struct operation* op, int client_id, struct comm_buffers* buffers, struct main_data* data, struct semaphores* sems){
     if (*(data->terminate) != 1) {
         read_main_client_buffer(buffers->main_client, client_id, data->buffers_size, op);
     }
 }
 
-void client_process_operation(struct operation* op, int client_id, struct main_data* data, int* counter){
+void client_process_operation(struct operation* op, int client_id, struct main_data* data, int* counter, struct semaphores* sems){
     op->receiving_client = client_id;
     op->status = 'C';
     *counter += 1;
-    (&data->results)[op->id] = op;
+    (data->results)[op->id] = *op;
 }
 
-void client_send_operation(struct operation* op, struct comm_buffers* buffers, struct main_data* data){
+void client_send_operation(struct operation* op, struct comm_buffers* buffers, struct main_data* data, struct semaphores* sems){
     write_client_interm_buffer(buffers->client_interm, data->buffers_size, op);
 }
