@@ -33,6 +33,7 @@ void intermediary_process_operation(struct operation* op, int interm_id, struct 
     op->receiving_interm = interm_id;
     op->status = 'I';
     *counter += 1;
+    data->intermediary_stats[interm_id] += 1;
     (data->results)[op->id] = *op;
 }
 

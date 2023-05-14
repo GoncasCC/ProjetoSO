@@ -154,7 +154,7 @@ void create_request(int* op_counter, struct comm_buffers* buffers, struct main_d
 		operation.requesting_client = i1;
         operation.requested_enterp = i2;
         operation.status = 'M';
-        (&data->results)[operation.id] = &operation;
+        data->results[operation.id] = operation;
 		if(*(data->terminate) == 1){return;}
 
 		write_main_client_buffer(buffers->main_client, data->buffers_size, &operation);

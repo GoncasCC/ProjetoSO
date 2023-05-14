@@ -32,11 +32,12 @@ void enterprise_receive_operation(struct operation* op, int enterp_id, struct co
 
 void enterprise_process_operation(struct operation* op, int enterp_id, struct main_data* data, int* counter, struct semaphores* sems){
     op->receiving_enterp = enterp_id;
-    if (counter >= &data->max_ops) {
+    if (*counter >= data->max_ops) {
         op->status = 'A';
     } else {
         op->status = 'E';
     }
     *counter += 1;
+    data->enterprise_stats[enterp_id] += 1;
     (data->results)[op->id] = *op;
 }
