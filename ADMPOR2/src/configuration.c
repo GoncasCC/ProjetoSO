@@ -1,13 +1,13 @@
 #include <stdlib.h>
 #include "configuration.h"
 
-struct outputs config(char* config_File, struct main_data* data){
-    struct outputs* out;
-    char r = 'r';
+struct outputs* config(char* config_File, struct main_data* data){
+    struct outputs* out = create_dynamic_memory(sizeof(struct outputs));
     int max_num = 5;
     int max_str = 15;
-    FILE *config = fopen (config_File, &r);
-    char line[15];
+    FILE *config;
+    config = fopen (config_File, "r");
+    char line[50];
     
         fgets (line, max_num, config);
         data->max_ops = atoi(line);
@@ -35,5 +35,5 @@ struct outputs config(char* config_File, struct main_data* data){
         out->alarm = atoi(line);
 
     fclose(config);
-    return *out;
+    return out;
 }

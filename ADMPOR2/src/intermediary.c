@@ -9,14 +9,14 @@
 int execute_intermediary(int interm_id, struct comm_buffers* buffers, struct main_data* data, struct semaphores* sems){
     struct operation op;
     //não sei se é suposto ser um apontador ou não
-    int counter = 0;
+    
     while (1) {
         intermediary_receive_operation(&op, buffers, data, sems);
         if (*(data->terminate) == 1) {
-                return counter;
+                return data->intermediary_stats[interm_id];
             }
         if (op.id != -1) {
-            intermediary_process_operation(&op, interm_id, data, &counter, sems);
+            intermediary_process_operation(&op, interm_id, data, &(data->intermediary_stats[interm_id]), sems);
             intermediary_send_answer(&op, buffers, data, sems);
         }
     }
@@ -33,7 +33,6 @@ void intermediary_process_operation(struct operation* op, int interm_id, struct 
     op->receiving_interm = interm_id;
     op->status = 'I';
     *counter += 1;
-    data->intermediary_stats[interm_id] += 1;
     (data->results)[op->id] = *op;
 }
 

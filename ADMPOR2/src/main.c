@@ -24,6 +24,7 @@ int i2;
 
 
 int main(int argc, char *argv[]) {
+
 //init data structures
 struct main_data* data = create_dynamic_memory(sizeof(struct
 main_data));
@@ -63,18 +64,20 @@ destroy_dynamic_memory(sems);
 void main_args(int argc, char* argv[], struct main_data* data){
     if (argc == 2)
     {
-        struct outputs out = config(argv[1], data);
+        struct outputs* out;
+        char* conf = argv[1];
+        out = config(conf, data);
     }
 }
 
 
 void create_dynamic_memory_buffers(struct main_data* data){
-    data->client_pids = create_dynamic_memory(data->n_clients);
-    data->intermediary_pids = create_dynamic_memory(data->n_intermediaries);
-    data->enterprise_pids = create_dynamic_memory(data->n_enterprises);
-    data->client_stats = create_dynamic_memory(data->n_clients);
-    data->intermediary_stats = create_dynamic_memory(data->n_intermediaries);
-    data->enterprise_stats = create_dynamic_memory(data->n_enterprises);
+    data->client_pids = create_dynamic_memory(data->n_clients * sizeof(int));
+    data->intermediary_pids = create_dynamic_memory(data->n_intermediaries * sizeof(int));
+    data->enterprise_pids = create_dynamic_memory(data->n_enterprises * sizeof(int));
+    data->client_stats = create_dynamic_memory(data->n_clients * sizeof(int));
+    data->intermediary_stats = create_dynamic_memory(data->n_intermediaries * sizeof(int));
+    data->enterprise_stats = create_dynamic_memory(data->n_enterprises * sizeof(int));
 }
 
 
@@ -148,7 +151,7 @@ void user_interaction(struct comm_buffers* buffers, struct main_data* data, stru
 
 
 void create_request(int* op_counter, struct comm_buffers* buffers, struct main_data* data, struct semaphores* sems){
-    if(*op_counter < sizeof(data->results)){
+    if(*op_counter < data->max_ops){
 		struct operation operation;
 		operation.id = *op_counter;
 		operation.requesting_client = i1;
@@ -160,7 +163,7 @@ void create_request(int* op_counter, struct comm_buffers* buffers, struct main_d
 		write_main_client_buffer(buffers->main_client, data->buffers_size, &operation);
 
 		printf("O pedido #%d foi criado!\n", operation.id);
-		*op_counter = *op_counter + 1;
+		*op_counter += 1;
 	}else
 	{
 		printf("O número máximo de pedidos foi alcançado! \n");
@@ -274,7 +277,20 @@ void destroy_memory_buffers(struct main_data* data, struct comm_buffers* buffers
 }
 
 void create_semaphores(struct main_data* data, struct semaphores* sems){
+    sems->client_interm->empty = semaphore_create(STR_SEM_MAIN_CLIENT_EMPTY, data->buffers_size * sizeof(struct operation));
+    sems->client_interm->full = semaphore_create(STR_SEM_CLIENT_INTERM_FULL, 0);
+    sems->client_interm->mutex = semaphore_create(STR_SEM_CLIENT_INTERM_MUTEX, 1);
 
+    sems->interm_enterp->empty = semaphore_create(STR_SEM_INTERM_ENTERP_EMPTY, data->buffers_size * sizeof(struct operation));
+    sems->interm_enterp->full = semaphore_create(STR_SEM_INTERM_ENTERP_FULL, 0);
+    sems->interm_enterp->mutex = semaphore_create(STR_SEM_INTERM_ENTERP_MUTEX, 1);
+
+    sems->main_client->empty = semaphore_create(STR_SEM_MAIN_CLIENT_EMPTY, data->buffers_size * sizeof(struct operation));
+    sems->main_client->full = semaphore_create(STR_SEM_MAIN_CLIENT_FULL, 0);
+    sems->main_client->mutex = semaphore_create(STR_SEM_MAIN_CLIENT_MUTEX, 1);
+
+    sems->results_mutex = semaphore_create(STR_SEM_RESULTS_MUTEX, 1);
+    
 }
 
 void wakeup_processes(struct main_data* data, struct semaphores* sems){
@@ -282,5 +298,18 @@ void wakeup_processes(struct main_data* data, struct semaphores* sems){
 }
 
 void destroy_semaphores(struct semaphores* sems){
+    semaphore_destroy(STR_SEM_CLIENT_INTERM_EMPTY, sems->client_interm->empty);
+    semaphore_destroy(STR_SEM_CLIENT_INTERM_FULL, sems->client_interm->full);
+    semaphore_destroy(STR_SEM_CLIENT_INTERM_MUTEX, sems->client_interm->mutex);
+
+    semaphore_destroy(STR_SEM_INTERM_ENTERP_EMPTY, sems->interm_enterp->empty);
+    semaphore_destroy(STR_SEM_INTERM_ENTERP_FULL, sems->interm_enterp->full);
+    semaphore_destroy(STR_SEM_INTERM_ENTERP_MUTEX, sems->interm_enterp->mutex);
+
+    semaphore_destroy(STR_SEM_MAIN_CLIENT_EMPTY, sems->main_client->empty);
+    semaphore_destroy(STR_SEM_MAIN_CLIENT_FULL, sems->main_client->full);
+    semaphore_destroy(STR_SEM_MAIN_CLIENT_MUTEX, sems->main_client->mutex);
+
+    semaphore_destroy(STR_SEM_RESULTS_MUTEX, sems->results_mutex);
 
 }

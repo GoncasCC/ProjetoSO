@@ -7,7 +7,7 @@ out: $(OBJECTOS)
 	$(CC) $(addprefix $(OBJ_dir)/,$(OBJECTOS)) -o bin/AdmPor
 
 %.o: src/%.c $($@)
-	$(CC) -I include -o $(OBJ_dir)/$@ -c $<
+	$(CC) -g -I include -o $(OBJ_dir)/$@ -c $<
 
 clean:
 	rm -f $(OBJ_dir)/*.o

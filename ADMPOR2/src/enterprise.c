@@ -9,14 +9,14 @@
 int execute_enterprise(int enterp_id, struct comm_buffers* buffers, struct main_data* data, struct semaphores* sems){
     struct operation op;
     //não sei se é suposto ser um apontador ou não
-    int counter = 0;
+    
     while (1) {
         enterprise_receive_operation(&op, enterp_id, buffers, data, sems);
         if (*(data->terminate) == 1) {
-                return counter;
+                return data->enterprise_stats[enterp_id];
             }
         if (op.id != -1) {
-            enterprise_process_operation(&op, enterp_id, data, &counter, sems);
+            enterprise_process_operation(&op, enterp_id, data, &(data->enterprise_stats[enterp_id]), sems);
         }
     }
 }
@@ -37,7 +37,6 @@ void enterprise_process_operation(struct operation* op, int enterp_id, struct ma
     } else {
         op->status = 'E';
     }
-    *counter += 1;
-    data->enterprise_stats[enterp_id] += 1;
+    *counter ++;
     (data->results)[op->id] = *op;
 }

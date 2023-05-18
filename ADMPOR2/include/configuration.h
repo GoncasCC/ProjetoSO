@@ -9,4 +9,4 @@ struct outputs{
 
 /**
  */
-struct outputs config(char* config_File, struct main_data* data);
+struct outputs* config(char* config_File, struct main_data* data);

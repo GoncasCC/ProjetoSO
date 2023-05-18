@@ -5,17 +5,17 @@
  * 
  * */
 #include "client.h"
+#include <stdio.h>
 
 int execute_client(int client_id, struct comm_buffers* buffers, struct main_data* data, struct semaphores* sems){
     struct operation op;
-    int counter = 0;
     while (1) {
         client_get_operation(&op, client_id, buffers, data, sems);
         if (*(data->terminate) == 1) {
-                return counter;
+                return data->client_stats[client_id];
             }
         if (op.id != -1) {
-            client_process_operation(&op, client_id, data, &counter, sems);
+            client_process_operation(&op, client_id, data, &(data->client_stats[client_id]), sems);
             client_send_operation(&op, buffers, data, sems);
         }
     }
@@ -30,8 +30,7 @@ void client_get_operation(struct operation* op, int client_id, struct comm_buffe
 void client_process_operation(struct operation* op, int client_id, struct main_data* data, int* counter, struct semaphores* sems){
     op->receiving_client = client_id;
     op->status = 'C';
-    *counter += 1;
-    data->client_stats[client_id] += 1;
+    (*counter)++;
     (data->results)[op->id] = *op;
 }
 

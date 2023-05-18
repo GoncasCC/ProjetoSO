@@ -138,7 +138,7 @@ void write_interm_enterp_buffer(struct rnd_access_buffer* buffer, int buffer_siz
 void read_main_client_buffer(struct rnd_access_buffer* buffer, int client_id, int buffer_size, struct operation* op) {
     int pos = -1;
     for (int i = 0; i < buffer_size; i++) {
-        if (buffer->ptrs[i] == client_id) {
+        if (buffer->ptrs[i] == 1 && buffer->buffer[i].requesting_client == client_id) {
             pos = i;
             break;
         }
@@ -175,7 +175,7 @@ void read_client_interm_buffer(struct circular_buffer* buffer, int buffer_size, 
 void read_interm_enterp_buffer(struct rnd_access_buffer* buffer, int enterp_id, int buffer_size, struct operation* op){
     int pos = -1;
     for (int i = 0; i < buffer_size; i++) {
-        if (buffer->ptrs[i] == enterp_id) {
+        if (buffer->ptrs[i] == 1 && buffer->buffer[i].requested_enterp == enterp_id) {
             pos = i;
             break;
         }
