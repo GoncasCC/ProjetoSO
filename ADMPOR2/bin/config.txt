@@ -1,0 +1,18 @@
+10
+5
+3
+3
+3
+log.txt
+stats.txt
+25
+
+
+//nº máximo de operações
+//tamanho dos buffers
+//nº de clientes
+//nº de intermediários
+//nº de empresas
+//nome do ficheiro de log
+//nome do ficheiro de estatísticas
+//temporização para o alarme
