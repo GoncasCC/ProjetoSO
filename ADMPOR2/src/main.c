@@ -17,31 +17,31 @@
 #include <string.h>
 #include <stdlib.h>
 
-
 int i1;
 int i2;
 
+struct main_data* thisData; 
+struct comm_buffers* thisBuffers;
+struct semaphores* thisSems;
+struct outputs* out;
 
 
 int main(int argc, char *argv[]) {
 
 //init data structures
-struct main_data* data = create_dynamic_memory(sizeof(struct
-main_data));
-struct comm_buffers* buffers = create_dynamic_memory(sizeof(struct
-comm_buffers));
-buffers->main_client = create_dynamic_memory(sizeof(struct
-rnd_access_buffer));
-buffers->client_interm = create_dynamic_memory(sizeof(struct
-circular_buffer));
-buffers-> interm_enterp = create_dynamic_memory(sizeof(struct
-rnd_access_buffer));
+struct main_data* data = create_dynamic_memory(sizeof(struct main_data));
+struct comm_buffers* buffers = create_dynamic_memory(sizeof(struct comm_buffers));
+buffers->main_client = create_dynamic_memory(sizeof(struct rnd_access_buffer));
+buffers->client_interm = create_dynamic_memory(sizeof(struct circular_buffer));
+buffers-> interm_enterp = create_dynamic_memory(sizeof(struct rnd_access_buffer));
 // init semaphore data structure
-struct semaphores* sems = create_dynamic_memory(sizeof(struct
-semaphores));
+struct semaphores* sems = create_dynamic_memory(sizeof(struct semaphores));
 sems->main_client = create_dynamic_memory(sizeof(struct prodcons));
 sems->client_interm = create_dynamic_memory(sizeof(struct prodcons));
 sems->interm_enterp = create_dynamic_memory(sizeof(struct prodcons));
+thisBuffers = buffers;
+thisData = data;
+thisSems = sems;
 //execute main code
 main_args(argc, argv, data);
 create_dynamic_memory_buffers(data);
@@ -64,9 +64,9 @@ destroy_dynamic_memory(sems);
 void main_args(int argc, char* argv[], struct main_data* data){
     if (argc == 2)
     {
-        struct outputs* out;
         char* conf = argv[1];
         out = config(conf, data);
+        signal(SIGINT, quitExec);
     }
 }
 
@@ -113,6 +113,8 @@ void launch_processes(struct comm_buffers* buffers, struct main_data* data, stru
 
 void user_interaction(struct comm_buffers* buffers, struct main_data* data, struct semaphores* sems){
     char action[10];
+    struct timespec* t;
+    launch_alarm(buffers, data, sems, out->alarm);
     int op_counter = 0;
     printf("Ações disponíveis: \n ");
     printf("    op cliente empresa - criar uma nova operação \n");
@@ -126,7 +128,14 @@ void user_interaction(struct comm_buffers* buffers, struct main_data* data, stru
         
 		if((strcmp(action , "op") == 0)){
             scanf("%d %d", &i1, &i2);
-			create_request(&op_counter, buffers, data, sems);
+            if (i1 >= 0 && i1 < data->n_clients && i2 >= 0 && i2 < data->n_enterprises)
+            {
+                create_request(&op_counter, buffers, data, sems);
+            }
+            else
+            {
+                printf("Erro: Id de cliente e/ou empresa inválido(s) \n");
+            }
 		}
         else if(strcmp(action , "status") == 0) {
             scanf("%d", &i1);
@@ -158,9 +167,14 @@ void create_request(int* op_counter, struct comm_buffers* buffers, struct main_d
         operation.requested_enterp = i2;
         operation.status = 'M';
         data->results[operation.id] = operation;
+        get_realTime(&(operation.start_time));
 		if(*(data->terminate) == 1){return;}
 
+        produce_begin(sems->main_client);
+
 		write_main_client_buffer(buffers->main_client, data->buffers_size, &operation);
+
+        produce_end(sems->main_client);
 
 		printf("O pedido #%d foi criado!\n", operation.id);
 		*op_counter += 1;
@@ -211,6 +225,7 @@ void stop_execution(struct main_data* data, struct comm_buffers* buffers, struct
     wait_processes(data);
     write_statistics(data);
     *data->terminate = 1;
+    destroy_semaphores(sems);
     destroy_memory_buffers(data, buffers);
 }
 
@@ -277,15 +292,15 @@ void destroy_memory_buffers(struct main_data* data, struct comm_buffers* buffers
 }
 
 void create_semaphores(struct main_data* data, struct semaphores* sems){
-    sems->client_interm->empty = semaphore_create(STR_SEM_MAIN_CLIENT_EMPTY, data->buffers_size * sizeof(struct operation));
+    sems->client_interm->empty = semaphore_create(STR_SEM_MAIN_CLIENT_EMPTY, data->buffers_size);
     sems->client_interm->full = semaphore_create(STR_SEM_CLIENT_INTERM_FULL, 0);
     sems->client_interm->mutex = semaphore_create(STR_SEM_CLIENT_INTERM_MUTEX, 1);
 
-    sems->interm_enterp->empty = semaphore_create(STR_SEM_INTERM_ENTERP_EMPTY, data->buffers_size * sizeof(struct operation));
+    sems->interm_enterp->empty = semaphore_create(STR_SEM_INTERM_ENTERP_EMPTY, data->buffers_size );
     sems->interm_enterp->full = semaphore_create(STR_SEM_INTERM_ENTERP_FULL, 0);
     sems->interm_enterp->mutex = semaphore_create(STR_SEM_INTERM_ENTERP_MUTEX, 1);
 
-    sems->main_client->empty = semaphore_create(STR_SEM_MAIN_CLIENT_EMPTY, data->buffers_size * sizeof(struct operation));
+    sems->main_client->empty = semaphore_create(STR_SEM_MAIN_CLIENT_EMPTY, data->buffers_size);
     sems->main_client->full = semaphore_create(STR_SEM_MAIN_CLIENT_FULL, 0);
     sems->main_client->mutex = semaphore_create(STR_SEM_MAIN_CLIENT_MUTEX, 1);
 

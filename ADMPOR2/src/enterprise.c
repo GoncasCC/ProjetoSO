@@ -25,18 +25,23 @@ int execute_enterprise(int enterp_id, struct comm_buffers* buffers, struct main_
 
 void enterprise_receive_operation(struct operation* op, int enterp_id, struct comm_buffers* buffers, struct main_data* data, struct semaphores* sems){
     if (*(data->terminate) != 1) {
-        read_interm_enterp_buffer(buffers->main_client, enterp_id, data->buffers_size, op);
+        consume_begin(sems->interm_enterp);
+
+        read_interm_enterp_buffer(buffers->interm_enterp, enterp_id, data->buffers_size, op);
+
+        consume_end(sems->interm_enterp);
     }
 }
 
 
 void enterprise_process_operation(struct operation* op, int enterp_id, struct main_data* data, int* counter, struct semaphores* sems){
+    get_realTime(&(op->enterp_time));
     op->receiving_enterp = enterp_id;
     if (*counter >= data->max_ops) {
         op->status = 'A';
     } else {
         op->status = 'E';
     }
-    *counter ++;
+    (*counter) = *counter + 1;
     (data->results)[op->id] = *op;
 }

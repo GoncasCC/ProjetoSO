@@ -35,5 +35,6 @@ struct outputs* config(char* config_File, struct main_data* data){
         out->alarm = atoi(line);
 
     fclose(config);
+    destroy_dynamic_memory(out);
     return out;
 }

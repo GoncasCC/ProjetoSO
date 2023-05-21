@@ -3,6 +3,7 @@
 
 #include "memory.h"
 #include "main.h"
+#include "aptime.h"
 
 /* Função principal de um Intermediário. Deve executar um ciclo infinito onde em 
 * cada iteração lê uma operação dos clientes e se a mesma tiver id 

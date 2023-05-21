@@ -3,6 +3,7 @@
 
 #include "memory.h"
 #include "main.h"
+#include "process-private.h"
 
 
 /* Função que inicia um novo processo cliente através da função fork do SO. O novo

@@ -4,6 +4,7 @@
 #include "memory.h"
 #include "synchronization.h"
 
+
 //Estrutura que agrega a informação necessária pela main do AdmPor.
 struct main_data {
 	int max_ops;			//número máximo de operações

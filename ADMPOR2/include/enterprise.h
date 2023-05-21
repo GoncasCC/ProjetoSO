@@ -3,6 +3,7 @@
 
 #include "memory.h"
 #include "main.h"
+#include "aptime.h"
 
 /* Função principal de uma Empresa. Deve executar um ciclo infinito onde em 
 * cada iteração lê uma operação e se e data->terminate ainda for igual a 0, processa-a.
