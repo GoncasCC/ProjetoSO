@@ -5,7 +5,7 @@
 2
 log.txt
 stats.txt
-10
+4
 
 
 //nº máximo de operações

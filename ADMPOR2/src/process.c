@@ -75,14 +75,14 @@ int wait_process(int process_id){
 }
 
 
-int launch_alarm(struct comm_buffers* buffers, struct main_data* data, struct semaphores* sems,  int alarm){
+int launch_alarm(struct comm_buffers* buffers, struct main_data* data, struct semaphores* sems,  int alarm, int* counter){
     int pid = fork();
     if (pid == -1) {    //em caso de erro
         perror("process");
         exit(1);
     }
     if (pid == 0)   { 
-        first_alarm(buffers, data, sems, alarm);
+        first_alarm(buffers, data, sems, alarm, counter);
         exit(0);
     }
     else    {

@@ -114,8 +114,8 @@ void launch_processes(struct comm_buffers* buffers, struct main_data* data, stru
 void user_interaction(struct comm_buffers* buffers, struct main_data* data, struct semaphores* sems){
     char action[10];
     struct timespec* t;
-    launch_alarm(buffers, data, sems, out->alarm);
     int op_counter = 0;
+    launch_alarm(buffers, data, sems, out->alarm, &op_counter);
     printf("Ações disponíveis: \n ");
     printf("    op cliente empresa - criar uma nova operação \n");
     printf("    status id - consultar o estado de uma operação \n ");

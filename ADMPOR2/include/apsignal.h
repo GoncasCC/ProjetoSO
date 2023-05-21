@@ -6,7 +6,7 @@
 
 void quitExec();
 
-void first_alarm(struct comm_buffers* b, struct main_data* d, struct semaphores* s, int a);
+void first_alarm(struct comm_buffers* b, struct main_data* d, struct semaphores* s, int a, int* counter);
 
 void exec_alarm();
 
